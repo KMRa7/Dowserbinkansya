@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>敏感者判定テスト</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Segoe UI", "Noto Sans JP", sans-serif;
+      background: #e9e9e9;
+      color: #333;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar {
+      background: #8fb6d7;
+      color: #fff;
+      font-size: 20px;
+      font-weight: 700;
+      padding: 10px 18px;
+    }
+
+    .content {
+      flex: 1;
+      width: 100%;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 20px 18px 84px;
+    }
+
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    .card {
+      background: #fff;
+      border: 1px solid #cfcfcf;
+      border-radius: 10px;
+      padding: 28px 24px;
+      min-height: 320px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+    }
+
+    .intro-title {
+      font-size: 30px;
+      font-weight: 700;
+      line-height: 1.7;
+      text-align: center;
+      margin: 30px auto 24px;
+      max-width: 820px;
+      white-space: pre-line;
+    }
+
+    .intro-sub {
+      text-align: center;
+      font-size: 18px;
+      line-height: 1.9;
+      margin-bottom: 28px;
+      white-space: pre-line;
+    }
+
+    .start-wrap {
+      text-align: center;
+      margin-top: 32px;
+    }
+
+    .start-button,
+    .nav-button,
+    .answer-button,
+    .line-button,
+    .restart-button,
+    .footer-action,
+    .q-tile {
+      border: none;
+      border-radius: 6px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .start-button {
+      background: #6ea3d2;
+      color: #fff;
+      padding: 14px 32px;
+      font-size: 20px;
+      min-width: 220px;
+    }
+
+    .question-title {
+      font-size: 28px;
+      font-weight: 700;
+      line-height: 1.8;
+      text-align: center;
+      margin: 28px auto 34px;
+      max-width: 860px;
+      white-space: pre-line;
+    }
+
+    .answer-row {
+      display: flex;
+      gap: 18px;
+      justify-content: center;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+
+    .answer-button {
+      min-width: 220px;
+      padding: 16px 24px;
+      font-size: 22px;
+      background: #c9c9c9;
+      color: #fff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.18);
+      white-space: normal;
+      line-height: 1.5;
+    }
+
+    .answer-button.selected-left { background: #d96e7a; }
+    .answer-button.selected-right { background: #6ea3d2; }
+
+    .nav-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 34px;
+      gap: 12px;
+    }
+
+    .nav-button {
+      background: #9b9b9b;
+      color: #fff;
+      padding: 12px 20px;
+      font-size: 16px;
+      min-width: 120px;
+    }
+
+    .nav-button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .next-button {
+      background: #6ea3d2;
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 4px 0 8px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .question-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(110px, 1fr));
+      gap: 8px;
+    }
+
+    .q-tile {
+      border: 1px solid #8f8f8f;
+      background: linear-gradient(#bdbdbd, #9e9e9e);
+      color: #fff;
+      min-height: 40px;
+      font-size: 14px;
+      text-align: left;
+      padding: 9px 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.22);
+    }
+
+    .q-tile.answered {
+      background: linear-gradient(#8fc1ac, #6fa68e);
+      border-color: #5d8d75;
+    }
+
+    .q-tile.unanswered {
+      background: linear-gradient(#c8c8c8, #aaaaaa);
+      border-color: #8f8f8f;
+    }
+
+    .loading-wrap {
+      min-height: 380px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
+
+    .spinner {
+      width: 64px;
+      height: 64px;
+      border: 6px solid #d7e6f3;
+      border-top: 6px solid #6ea3d2;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 18px;
+    }
+
+    .loading-text {
+      font-size: 22px;
+      font-weight: 700;
+      color: #5f7f99;
+    }
+
+    .result-type {
+      text-align: center;
+      font-size: 34px;
+      font-weight: 800;
+      color: #4b708d;
+      margin: 10px 0 20px;
+    }
+
+    .result-text {
+      font-size: 19px;
+      line-height: 2;
+      max-width: 820px;
+      margin: 0 auto;
+      word-break: break-word;
+      white-space: pre-line;
+    }
+
+    .result-summary {
+      margin: 26px auto 0;
+      max-width: 820px;
+      padding-top: 18px;
+      border-top: 1px dashed #c8c8c8;
+      white-space: pre-line;
+      font-size: 13px;
+      line-height: 1.8;
+      color: #666;
+    }
+
+    .result-actions {
+      margin-top: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .line-button {
+      background: #06c755;
+      color: #fff;
+      padding: 14px 26px;
+      font-size: 20px;
+      min-width: 280px;
+    }
+
+    .restart-button {
+      background: #9b9b9b;
+      color: #fff;
+      padding: 12px 24px;
+      font-size: 16px;
+      min-width: 220px;
+    }
+
+    .result-question-grid {
+      grid-template-columns: repeat(5, minmax(110px, 1fr));
+    }
+
+    .result-q-tile {
+      position: relative;
+      border: 1px solid #8f8f8f;
+      background: linear-gradient(#bdbdbd, #9e9e9e);
+      color: #fff;
+      min-height: 42px;
+      font-size: 14px;
+      padding: 8px 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.22);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .result-q-tile::after {
+      content: "✔";
+      position: absolute;
+      top: 3px;
+      right: 6px;
+      font-size: 11px;
+      color: #333;
+    }
+
+    .result-q-no {
+      font-weight: 700;
+    }
+
+    .result-q-status {
+      font-weight: 700;
+      text-shadow: 0 1px 1px rgba(255,255,255,0.35);
+    }
+
+    .result-q-status.correct {
+      color: #ff7043;
+    }
+
+    .result-q-status.incorrect {
+      color: #5aa7ff;
+    }
+
+    .footer {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: #045b9a;
+      color: #fff;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      height: 52px;
+      font-size: 12px;
+      font-weight: 700;
+      z-index: 100;
+      padding: 0 6px;
+    }
+
+    .footer-action {
+      background: transparent;
+      color: #fff;
+      padding: 4px 8px;
+      text-align: center;
+    }
+
+    .footer-center {
+      line-height: 1.2;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 900px) {
+      .question-grid,
+      .result-question-grid {
+        grid-template-columns: repeat(3, minmax(100px, 1fr));
+      }
+
+      .intro-title,
+      .question-title {
+        font-size: 24px;
+      }
+
+      .result-type {
+        font-size: 28px;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .topbar {
+        font-size: 18px;
+        padding: 10px 12px;
+      }
+
+      .content {
+        padding: 10px 10px 80px;
+      }
+
+      .card {
+        padding: 18px 14px;
+        min-height: auto;
+      }
+
+      .intro-title,
+      .question-title {
+        font-size: 20px;
+        line-height: 1.6;
+        margin: 18px auto 20px;
+      }
+
+      .intro-sub {
+        font-size: 14px;
+        line-height: 1.8;
+      }
+
+      .answer-row {
+        gap: 12px;
+      }
+
+      .answer-button {
+        min-width: calc(50% - 6px);
+        width: calc(50% - 6px);
+        font-size: 17px;
+        padding: 14px 10px;
+      }
+
+      .nav-row {
+        margin-top: 22px;
+      }
+
+      .nav-button {
+        min-width: 96px;
+        padding: 11px 14px;
+        font-size: 15px;
+      }
+
+      .question-grid,
+      .result-question-grid {
+        grid-template-columns: repeat(3, minmax(78px, 1fr));
+        gap: 6px;
+      }
+
+      .q-tile {
+        min-height: 38px;
+        font-size: 13px;
+        padding: 9px 10px;
+      }
+
+      .result-q-tile {
+        min-height: 38px;
+        font-size: 13px;
+        padding: 8px 10px;
+      }
+
+      .section-head {
+        font-size: 13px;
+        margin: 2px 0 6px;
+      }
+
+      .result-type {
+        font-size: 24px;
+      }
+
+      .result-text {
+        font-size: 15px;
+        line-height: 1.85;
+      }
+
+      .result-summary {
+        font-size: 12px;
+      }
+
+      .line-button,
+      .restart-button {
+        min-width: 100%;
+        width: 100%;
+      }
+
+      .footer {
+        height: 50px;
+        font-size: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="topbar">敏感者判定テスト</div>
+
+    <div class="content">
+      <section id="introScreen" class="screen active">
+        <div class="card" style="margin-top:18px;">
+          <div class="intro-title">敏感者判定テスト</div>
+          <div class="intro-sub">あまり深く考えずに、質問を読んで第一印象でパッと答えてください。
+15の質問に回答したら「この内容で判定する」ボタンを押してください</div>
+          <div class="start-wrap">
+            <button id="startButton" class="start-button" type="button">開始する</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="questionScreen" class="screen">
+        <div class="card" style="margin-top:18px;">
+          <div id="questionTitle" class="question-title"></div>
+          <div class="answer-row">
+            <button id="leftButton" class="answer-button" type="button"></button>
+            <button id="rightButton" class="answer-button" type="button"></button>
+          </div>
+          <div class="nav-row">
+            <button id="prevButton" class="nav-button" type="button">戻る</button>
+            <button id="nextButton" class="nav-button next-button" type="button">次へ</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="confirmScreen" class="screen">
+        <div class="section-head">
+          <span>問題一覧</span>
+          <span id="remainingCountLabel">判定残り 0 問</span>
+        </div>
+        <div id="confirmQuestionGrid" class="question-grid"></div>
+
+        <div class="card" style="margin-top:8px;">
+          <div class="result-type" style="font-size:28px; color:#5f7f99;">回答内容の確認</div>
+          <div id="confirmMessage" class="result-text" style="text-align:center;"></div>
+          <div id="confirmSummary" class="result-summary" style="margin-top:20px;"></div>
+          <div class="result-actions">
+            <button id="confirmJudgeButton" class="line-button" type="button" style="background:#6ea3d2;">この内容で判定する</button>
+            <button id="backToQuestionsButton" class="restart-button" type="button">設問に戻る</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="loadingScreen" class="screen">
+        <div class="card loading-wrap">
+          <div class="spinner"></div>
+          <div class="loading-text">判定中...</div>
+        </div>
+      </section>
+
+      <section id="resultScreen" class="screen">
+        <div class="section-head">
+          <span>問題一覧</span>
+          <span id="scoreLabel">0 / 15 点</span>
+        </div>
+        <div id="resultQuestionGrid" class="question-grid result-question-grid"></div>
+
+        <div class="card" style="margin-top:8px;">
+          <div id="resultType" class="result-type"></div>
+          <div id="resultText" class="result-text"></div>
+          <div id="resultSummary" class="result-summary"></div>
+          <div class="result-actions">
+            <button id="sendButton" class="line-button" type="button">LINEに送る</button>
+            <button id="restartButton" class="restart-button" type="button">最初からやり直す</button>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="footer">
+      <button id="footerBackButton" class="footer-action" type="button">◀<br>戻る</button>
+      <button id="footerCenterButton" class="footer-action footer-center" type="button"><span id="footerProgress">- / 15</span><br>問目</button>
+      <button id="footerListButton" class="footer-action" type="button">一覧画面へ</button>
+    </div>
+  </div>
+
+  <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
+  <script>
+    const LIFF_ID = '2009756046-LGSv8mSu';
+
+    const questions = [
+      { text: '（１）黄色と青色はどちらが好き？', left: '黄色', right: '青色' },
+      { text: '（２）鏡をみるのは好き？', left: '好き', right: '嫌い' },
+      { text: '（３）人と握手するとき、自分から手を出す？', left: '自分から手を出す', right: '自分から手を出さない' },
+      { text: '（４）野菜料理と肉料理、どちらが好き？', left: '野菜料理', right: '肉料理' },
+      { text: '（５）温かい料理と冷たい料理、どちらが好き？', left: '温かい料理', right: '冷たい料理' },
+      { text: '（６）寝る時、右と左どちらを下にすると安眠できる？', left: '右', right: '左' },
+      { text: '（７）ピアノを弾いた時（または近くに行った時）、気分が悪くなったこと', left: 'ある', right: 'ない' },
+      { text: '（８）時々片頭痛になる？', left: '起きる', right: '起きない' },
+      { text: '（９）人が多いところと、少ないところ、どちらが好き？', left: '多いところ', right: '少ないところ' },
+      { text: '（１０）じっとしているのと、行動的に動き回るのはどちらが好き？', left: 'じっとしている', right: '行動的に動き回る' },
+      { text: '（１１）太陽の光と月の光どちらが心地良く感じる？', left: '太陽の光', right: '月の光' },
+      { text: '（１２）イライラしやすい？', left: 'しやすい', right: 'しにくい' },
+      { text: '（１３）甘いものと酸っぱい物、どちらが好き？', left: '甘いもの', right: '酸っぱいもの' },
+      { text: '（１４）朝、布団や毛布を跳ね除けている事が多い？', left: '多い', right: '少ない' },
+      { text: '（１５）暗闇で色々な物が光って見える事がある？', left: 'ある', right: 'ない' }
+    ];
+
+    // 0 = 左、1 = 右
+    const correctAnswers = [1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0];
+
+    const highScoreMessage = `７点以上の方は、
+「敏感者」の傾向があります。
+
+これは、特別な能力というよりも、
+”感じ取る幅が広い状態”です。
+
+人よりも多くの情報を受け取れる分、
+
+・疲れやすい
+・影響を受けやすい
+・理由のない違和感を感じやすい
+
+といった状態にもなりやすいのが特徴です。
+
+ですがこれは、問題ではありません。
+
+感覚は、整えるものです。
+
+そしてその感覚は、
+
+・空間
+・人
+・場の状態
+
+とも深く関係しています。
+
+もし、
+
+・場所によって体調が変わる
+・特定の空間で疲れやすい
+
+と感じることがある場合は、
+
+それは「あなたの問題」ではなく
+空間との関係性かもしれません。`;
+
+    const lowScoreMessage = `６点以下の方は、
+現時点では「敏感者」の傾向は強くありません。
+
+ただし、体調や環境、人間関係の影響によって
+感覚の出方は変化することがあります。
+
+違和感が続く場合は、
+空間や過ごし方を見直してみるのもおすすめです。`;
+
+    let currentIndex = 0;
+    let answers = Array(questions.length).fill(null);
+    let latestMessage = '';
+    let liffReady = false;
+
+    const introScreen = document.getElementById('introScreen');
+    const questionScreen = document.getElementById('questionScreen');
+    const confirmScreen = document.getElementById('confirmScreen');
+    const loadingScreen = document.getElementById('loadingScreen');
+    const resultScreen = document.getElementById('resultScreen');
+
+    const footerProgress = document.getElementById('footerProgress');
+    const questionTitle = document.getElementById('questionTitle');
+    const leftButton = document.getElementById('leftButton');
+    const rightButton = document.getElementById('rightButton');
+    const prevButton = document.getElementById('prevButton');
+    const nextButton = document.getElementById('nextButton');
+
+    const resultType = document.getElementById('resultType');
+    const resultText = document.getElementById('resultText');
+    const resultSummary = document.getElementById('resultSummary');
+    const resultQuestionGrid = document.getElementById('resultQuestionGrid');
+    const scoreLabel = document.getElementById('scoreLabel');
+
+    const confirmMessage = document.getElementById('confirmMessage');
+    const confirmSummary = document.getElementById('confirmSummary');
+    const confirmQuestionGrid = document.getElementById('confirmQuestionGrid');
+    const remainingCountLabel = document.getElementById('remainingCountLabel');
+
+    function getUnansweredIndexes() {
+      return answers
+        .map((answer, index) => answer === null ? index + 1 : null)
+        .filter((item) => item !== null);
+    }
+
+    function getUnansweredLabel() {
+      return getUnansweredIndexes().map((num) => 'Q' + num).join('、');
+    }
+
+    function showRequiredAlert(prefix = '15問すべて回答してください。') {
+      const unansweredLabel = getUnansweredLabel();
+      const message = unansweredLabel ? prefix + '\n未回答：' + unansweredLabel : prefix;
+      alert(message);
+    }
+
+    function showScreen(screen) {
+      [introScreen, questionScreen, confirmScreen, loadingScreen, resultScreen].forEach((el) => {
+        el.classList.remove('active');
+      });
+      screen.classList.add('active');
+      footerProgress.textContent = screen === questionScreen ? (currentIndex + 1) + ' / ' + questions.length : '- / ' + questions.length;
+    }
+
+    function buildAnswerLabel(index) {
+      if (answers[index] === 0) return questions[index].left;
+      if (answers[index] === 1) return questions[index].right;
+      return '未回答';
+    }
+
+    function buildAnswerLines() {
+      return questions.map((q, i) => `Q${i + 1}：${buildAnswerLabel(i)} / ${q.text}`);
+    }
+
+    function calculateResults() {
+      let correctCount = 0;
+      let leftCount = 0;
+      let rightCount = 0;
+      let answeredCount = 0;
+
+      answers.forEach((answer, index) => {
+        if (answer !== null) answeredCount += 1;
+        if (answer === 0) leftCount += 1;
+        if (answer === 1) rightCount += 1;
+        if (answer === correctAnswers[index]) correctCount += 1;
+      });
+
+      return {
+        correctCount,
+        leftCount,
+        rightCount,
+        answeredCount,
+        totalQuestions: questions.length
+      };
+    }
+
+    function renderQuestionScreen() {
+      const q = questions[currentIndex];
+      questionTitle.textContent = q.text;
+      leftButton.textContent = q.left;
+      rightButton.textContent = q.right;
+
+      leftButton.className = 'answer-button' + (answers[currentIndex] === 0 ? ' selected-left' : '');
+      rightButton.className = 'answer-button' + (answers[currentIndex] === 1 ? ' selected-right' : '');
+
+      prevButton.disabled = currentIndex === 0;
+      nextButton.disabled = answers[currentIndex] === null;
+      nextButton.textContent = currentIndex === questions.length - 1 ? '全問一括判定' : '次へ';
+
+      footerProgress.textContent = (currentIndex + 1) + ' / ' + questions.length;
+    }
+
+    function selectAnswer(value) {
+      answers[currentIndex] = value;
+      renderQuestionScreen();
+    }
+
+    function buildAnsweredGrid(container) {
+      container.innerHTML = '';
+      questions.forEach((_, i) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        const answered = answers[i] !== null;
+        btn.className = 'q-tile ' + (answered ? 'answered' : 'unanswered');
+        btn.textContent = 'Q' + (i + 1);
+        btn.addEventListener('click', () => {
+          currentIndex = i;
+          renderQuestionScreen();
+          showScreen(questionScreen);
+        });
+        container.appendChild(btn);
+      });
+    }
+
+    function fillConfirmScreen() {
+      const unanswered = getUnansweredIndexes();
+      remainingCountLabel.textContent = '判定残り ' + unanswered.length + ' 問';
+
+      if (unanswered.length === 0) {
+        confirmMessage.textContent = 'すべての設問に回答済みです。\nこの内容で判定に進みますか？';
+      } else {
+        confirmMessage.textContent = '未回答の設問があります。\n回答を確認してください。';
+      }
+
+      confirmSummary.textContent = '回答内容\n' + buildAnswerLines().join('\n');
+      buildAnsweredGrid(confirmQuestionGrid);
+    }
+
+    function buildResultGrid() {
+      resultQuestionGrid.innerHTML = '';
+
+      questions.forEach((_, i) => {
+        const item = document.createElement('div');
+        item.className = 'result-q-tile';
+
+        const qNo = document.createElement('span');
+        qNo.className = 'result-q-no';
+        qNo.textContent = 'Q' + (i + 1);
+
+        const status = document.createElement('span');
+        const isCorrect = answers[i] === correctAnswers[i];
+        status.className = 'result-q-status ' + (isCorrect ? 'correct' : 'incorrect');
+        status.textContent = isCorrect ? '正解' : '不正解';
+
+        item.appendChild(qNo);
+        item.appendChild(status);
+        resultQuestionGrid.appendChild(item);
+      });
+    }
+
+    function judgeResult() {
+      const result = calculateResults();
+      const answerLines = buildAnswerLines();
+      const isHigh = result.correctCount >= 7;
+
+      buildResultGrid();
+      scoreLabel.textContent = result.correctCount + ' / ' + result.totalQuestions + ' 点';
+
+      resultType.textContent = isHigh ? '【敏感者傾向あり】' : '【今回は基準未満】';
+      resultText.textContent = isHigh ? highScoreMessage : lowScoreMessage;
+
+      resultSummary.textContent =
+        '回答一覧\n' + answerLines.join('\n') +
+        '\n\n正解数：' + result.correctCount + ' / ' + result.totalQuestions +
+        '\n左側の選択数：' + result.leftCount +
+        '\n右側の選択数：' + result.rightCount;
+
+      latestMessage =
+        '≪敏感者判定テスト≫\n' +
+        (isHigh ? '【敏感者傾向あり】' : '【今回は基準未満】') + '\n\n' +
+        (isHigh ? highScoreMessage : lowScoreMessage) + '\n\n' +
+        '正解数：' + result.correctCount + ' / ' + result.totalQuestions + '\n\n' +
+        '【回答一覧】\n' + answerLines.join('\n');
+    }
+
+    function startJudgeFlow() {
+      const hasUnanswered = answers.some((item) => item === null);
+      if (hasUnanswered) {
+        showRequiredAlert('15問すべて回答してください。');
+        return;
+      }
+      fillConfirmScreen();
+      showScreen(confirmScreen);
+    }
+
+    async function initLiff() {
+      if (typeof liff === 'undefined') return;
+      try {
+        await liff.init({ liffId: LIFF_ID });
+        liffReady = true;
+      } catch (e) {
+        console.error('LIFF init error', e);
+      }
+    }
+
+    async function sendToLine() {
+      if (!latestMessage) {
+        alert('先に判定結果を表示してください。');
+        return;
+      }
+      if (!liffReady) {
+        alert('LIFFの初期化が完了していません。');
+        return;
+      }
+      try {
+        if (!liff.isLoggedIn()) {
+          liff.login();
+          return;
+        }
+        if (!liff.isInClient()) {
+          alert('LINEアプリ内で開くと送信できます。');
+          return;
+        }
+        await liff.sendMessages([{ type: 'text', text: latestMessage }]);
+        alert('LINEに送信しました');
+        liff.closeWindow();
+      } catch (e) {
+        console.error(e);
+        alert('送信に失敗しました。');
+      }
+    }
+
+    document.getElementById('startButton').addEventListener('click', () => {
+      currentIndex = 0;
+      renderQuestionScreen();
+      showScreen(questionScreen);
+    });
+
+    leftButton.addEventListener('click', () => selectAnswer(0));
+    rightButton.addEventListener('click', () => selectAnswer(1));
+
+    prevButton.addEventListener('click', () => {
+      if (currentIndex > 0) {
+        currentIndex -= 1;
+        renderQuestionScreen();
+      }
+    });
+
+    nextButton.addEventListener('click', () => {
+      if (answers[currentIndex] === null) {
+        showRequiredAlert('この設問は回答必須です。');
+        return;
+      }
+
+      if (currentIndex === questions.length - 1) {
+        startJudgeFlow();
+        return;
+      }
+
+      currentIndex += 1;
+      renderQuestionScreen();
+    });
+
+    document.getElementById('confirmJudgeButton').addEventListener('click', () => {
+      const hasUnanswered = answers.some((item) => item === null);
+      if (hasUnanswered) {
+        showRequiredAlert('15問すべて回答してください。');
+        return;
+      }
+
+      showScreen(loadingScreen);
+      window.setTimeout(() => {
+        judgeResult();
+        showScreen(resultScreen);
+      }, 900);
+    });
+
+    document.getElementById('backToQuestionsButton').addEventListener('click', () => {
+      renderQuestionScreen();
+      showScreen(questionScreen);
+    });
+
+    document.getElementById('sendButton').addEventListener('click', sendToLine);
+
+    document.getElementById('restartButton').addEventListener('click', () => {
+      currentIndex = 0;
+      answers = Array(questions.length).fill(null);
+      latestMessage = '';
+      showScreen(introScreen);
+    });
+
+    document.getElementById('footerBackButton').addEventListener('click', () => {
+      if (questionScreen.classList.contains('active')) {
+        if (currentIndex > 0) {
+          currentIndex -= 1;
+          renderQuestionScreen();
+        } else {
+          showScreen(introScreen);
+        }
+      } else if (confirmScreen.classList.contains('active') || resultScreen.classList.contains('active')) {
+        renderQuestionScreen();
+        showScreen(questionScreen);
+      } else {
+        showScreen(introScreen);
+      }
+    });
+
+    document.getElementById('footerCenterButton').addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    document.getElementById('footerListButton').addEventListener('click', () => {
+      fillConfirmScreen();
+      showScreen(confirmScreen);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    initLiff();
+  </script>
+</body>
+</html>
