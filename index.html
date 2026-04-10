@@ -228,14 +228,7 @@
     }
 
     .result-summary {
-      margin: 26px auto 0;
-      max-width: 820px;
-      padding-top: 18px;
-      border-top: 1px dashed #c8c8c8;
-      white-space: pre-line;
-      font-size: 13px;
-      line-height: 1.8;
-      color: #666;
+      display: none;
     }
 
     .result-actions {
@@ -436,10 +429,6 @@
         line-height: 1.85;
       }
 
-      .result-summary {
-        font-size: 12px;
-      }
-
       .line-button,
       .restart-button {
         min-width: 100%;
@@ -462,7 +451,7 @@
         <div class="card" style="margin-top:18px;">
           <div class="intro-title">敏感者判定テスト</div>
           <div class="intro-sub">あまり深く考えずに、質問を読んで第一印象でパッと答えてください。
-15の質問に回答したら「この内容で判定する」ボタンを押してください</div>
+15の質問に回答したら「全問一括判定」ボタンを押してください</div>
           <div class="start-wrap">
             <button id="startButton" class="start-button" type="button">開始する</button>
           </div>
@@ -493,7 +482,7 @@
         <div class="card" style="margin-top:8px;">
           <div class="result-type" style="font-size:28px; color:#5f7f99;">回答内容の確認</div>
           <div id="confirmMessage" class="result-text" style="text-align:center;"></div>
-          <div id="confirmSummary" class="result-summary" style="margin-top:20px;"></div>
+          <div id="confirmSummary" class="result-summary" style="display:block; margin-top:20px;"></div>
           <div class="result-actions">
             <button id="confirmJudgeButton" class="line-button" type="button" style="background:#6ea3d2;">この内容で判定する</button>
             <button id="backToQuestionsButton" class="restart-button" type="button">設問に戻る</button>
@@ -669,22 +658,13 @@
 
     function calculateResults() {
       let correctCount = 0;
-      let leftCount = 0;
-      let rightCount = 0;
-      let answeredCount = 0;
 
       answers.forEach((answer, index) => {
-        if (answer !== null) answeredCount += 1;
-        if (answer === 0) leftCount += 1;
-        if (answer === 1) rightCount += 1;
         if (answer === correctAnswers[index]) correctCount += 1;
       });
 
       return {
         correctCount,
-        leftCount,
-        rightCount,
-        answeredCount,
         totalQuestions: questions.length
       };
     }
@@ -765,7 +745,6 @@
 
     function judgeResult() {
       const result = calculateResults();
-      const answerLines = buildAnswerLines();
       const isHigh = result.correctCount >= 7;
 
       buildResultGrid();
@@ -773,19 +752,13 @@
 
       resultType.textContent = isHigh ? '【敏感者傾向あり】' : '【今回は基準未満】';
       resultText.textContent = isHigh ? highScoreMessage : lowScoreMessage;
-
-      resultSummary.textContent =
-        '回答一覧\n' + answerLines.join('\n') +
-        '\n\n正解数：' + result.correctCount + ' / ' + result.totalQuestions +
-        '\n左側の選択数：' + result.leftCount +
-        '\n右側の選択数：' + result.rightCount;
+      resultSummary.textContent = '';
 
       latestMessage =
         '≪敏感者判定テスト≫\n' +
         (isHigh ? '【敏感者傾向あり】' : '【今回は基準未満】') + '\n\n' +
         (isHigh ? highScoreMessage : lowScoreMessage) + '\n\n' +
-        '正解数：' + result.correctCount + ' / ' + result.totalQuestions + '\n\n' +
-        '【回答一覧】\n' + answerLines.join('\n');
+        '正解数：' + result.correctCount + ' / ' + result.totalQuestions;
     }
 
     function startJudgeFlow() {
