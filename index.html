@@ -617,7 +617,6 @@
     const scoreLabel = document.getElementById('scoreLabel');
 
     const confirmMessage = document.getElementById('confirmMessage');
-    const confirmSummary = document.getElementById('confirmSummary');
     const confirmQuestionGrid = document.getElementById('confirmQuestionGrid');
     const remainingCountLabel = document.getElementById('remainingCountLabel');
 
@@ -643,16 +642,6 @@
       });
       screen.classList.add('active');
       footerProgress.textContent = screen === questionScreen ? (currentIndex + 1) + ' / ' + questions.length : '- / ' + questions.length;
-    }
-
-    function buildAnswerLabel(index) {
-      if (answers[index] === 0) return questions[index].left;
-      if (answers[index] === 1) return questions[index].right;
-      return '未回答';
-    }
-
-    function buildAnswerLines() {
-      return questions.map((q, i) => `Q${i + 1}：${buildAnswerLabel(i)} / ${q.text}`);
     }
 
     function calculateResults() {
@@ -716,7 +705,6 @@
         confirmMessage.textContent = '未回答の設問があります。\n回答を確認してください。';
       }
 
-      confirmSummary.textContent = '回答内容\n' + buildAnswerLines().join('\n');
       buildAnsweredGrid(confirmQuestionGrid);
     }
 
