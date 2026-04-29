@@ -202,18 +202,6 @@
       line-height: 1.9;
     }
 
-    .selected-answer-list strong {
-      color: #356b57;
-    }
-
-    .helper {
-      margin-top: 8px;
-      font-size: 12px;
-      color: #666;
-      text-align: center;
-      line-height: 1.6;
-    }
-
     @keyframes spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
@@ -236,6 +224,7 @@
     }
   </style>
 </head>
+
 <body>
   <div class="container">
     <div class="header">
@@ -263,7 +252,6 @@
       <div class="answers-box">
         <p class="result-title">あなたの回答</p>
         <ol id="selectedAnswerList" class="selected-answer-list"></ol>
-        
       </div>
 
       <div class="result-box">
@@ -271,11 +259,13 @@
         <div id="resultDescription" class="result-description"></div>
       </div>
 
-       <button id="sendButton" class="back-button" type="button">LINEに送る</button>
+      <button id="sendButton" class="back-button" type="button">LINEに送る</button>
+      <button id="resetButton" class="back-button" type="button">もう一度診断する</button>
     </div>
   </div>
 
   <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
+
   <script>
     const questions = [
       { text: '黄色と青色はどちらが好き？', answers: [{ label: '黄色', isTarget: false }, { label: '青色', isTarget: true }] },
@@ -332,15 +322,19 @@
 設定内容が決まり次第、ここに表示できます。`;
 
     const LIFF_ID = '2009684850-jcgBkTJo';
+
     let latestMessage = '';
     let liffReady = false;
 
     const questionList = document.getElementById('questionList');
     const diagnoseButton = document.getElementById('diagnoseButton');
     const sendButton = document.getElementById('sendButton');
+    const resetButton = document.getElementById('resetButton');
+
     const questionScreen = document.getElementById('questionScreen');
     const loadingScreen = document.getElementById('loadingScreen');
     const resultScreen = document.getElementById('resultScreen');
+
     const selectedAnswerList = document.getElementById('selectedAnswerList');
     const resultTitle = document.getElementById('resultTitle');
     const resultDescription = document.getElementById('resultDescription');
@@ -349,6 +343,7 @@
       questionScreen.classList.remove('active');
       loadingScreen.classList.remove('active');
       resultScreen.classList.remove('active');
+
       screen.classList.add('active');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -356,6 +351,7 @@
     function renderQuestions() {
       questionList.innerHTML = questions.map((question, questionIndex) => {
         const number = questionIndex + 1;
+
         const answerHtml = question.answers.map((answer) => {
           return `
             <label class="answer-option">
@@ -389,6 +385,7 @@
     function getSelectedAnswers() {
       return questions.map((question, index) => {
         const selected = document.querySelector(`input[name="q${index}"]:checked`);
+
         if (!selected) return null;
 
         return {
@@ -413,7 +410,13 @@
       } else {
         resultTitle.textContent = '判定結果は準備中です。';
         resultDescription.textContent = pendingText;
-      敏感者判定テスト≫
+      }
+
+      const selectedText = selectedAnswers.map((item) => {
+        return `Q${item.questionNumber}. ${item.questionText}\nA. ${item.answer}`;
+      }).join('\n\n');
+
+      latestMessage = `≪敏感者判定テスト≫
 
 【あなたの回答】
 ${selectedText}
@@ -424,7 +427,7 @@ ${resultTitle.textContent}
 ${resultDescription.textContent}`;
     }
 
-    async .join('\\n');itLiff() {
+    async function initLiff() {
       if (typeof liff === 'undefined') return;
 
       try {
@@ -457,7 +460,13 @@ ${resultDescription.textContent}`;
           return;
         }
 
-        await liff.sendMessages([{ type: 'text', text: latestMessage }]);
+        await liff.sendMessages([
+          {
+            type: 'text',
+            text: latestMessage
+          }
+        ]);
+
         alert('LINEに送信しました');
         liff.closeWindow();
       } catch (error) {
@@ -484,11 +493,14 @@ ${resultDescription.textContent}`;
 
     function resetDiagnosis() {
       document.getElementById('sensitiveForm').reset();
+
       syncSelectedStyles();
+
       selectedAnswerList.innerHTML = '';
-      
       resultTitle.textContent = '';
       resultDescription.textContent = '';
+      latestMessage = '';
+
       showScreen(questionScreen);
     }
 
@@ -501,12 +513,10 @@ ${resultDescription.textContent}`;
     });
 
     diagnoseButton.addEventListener('click', startDiagnosis);
-    if (sendButton) {
-      sendButton.addEventListener('click', sendToLine);
-    }
+    sendButton.addEventListener('click', sendToLine);
+    resetButton.addEventListener('click', resetDiagnosis);
 
     window.addEventListener('load', initLiff);
-    
   </script>
 </body>
 </html>
