@@ -271,7 +271,7 @@
         <div id="resultDescription" class="result-description"></div>
       </div>
 
-       <button id="sendButton" class="back-button" type="button">LINEに送る</button></button>
+       <button id="sendButton" class="back-button" type="button">LINEに送る</button>
     </div>
   </div>
 
@@ -413,15 +413,7 @@
       } else {
         resultTitle.textContent = '判定結果は準備中です。';
         resultDescription.textContent = pendingText;
-      }
-
-      const selectedText = selectedAnswers
-        .map((item) => `・Q. ${item.questionText}
-　A. ${item.answer}`)
-        .join('
-');
-
-      latestMessage = `≪敏感者判定テスト≫
+      敏感者判定テスト≫
 
 【あなたの回答】
 ${selectedText}
@@ -432,7 +424,7 @@ ${resultTitle.textContent}
 ${resultDescription.textContent}`;
     }
 
-    async function initLiff() {
+    async .join('\\n');itLiff() {
       if (typeof liff === 'undefined') return;
 
       try {
