@@ -275,6 +275,7 @@
     </div>
   </div>
 
+  <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
   <script>
     const questions = [
       { text: '黄色と青色はどちらが好き？', answers: [{ label: '黄色', isTarget: false }, { label: '青色', isTarget: true }] },
@@ -330,7 +331,7 @@
     const pendingText = `現在、判定対象の選択が6個以下の場合の表示内容は未設定です。
 設定内容が決まり次第、ここに表示できます。`;
 
-    const LIFF_ID = '2009756046-tz7CJ7UU';
+    const LIFF_ID = '2009684850-jcgBkTJo';
     let latestMessage = '';
     let liffReady = false;
 
@@ -508,10 +509,12 @@ ${resultDescription.textContent}`;
     });
 
     diagnoseButton.addEventListener('click', startDiagnosis);
-    sendButton.addEventListener('click', sendToLine);
-    initLiff();
+    if (sendButton) {
+      sendButton.addEventListener('click', sendToLine);
+    }
+
+    window.addEventListener('load', initLiff);
     
   </script>
-  <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
 </body>
 </html>
